@@ -4,13 +4,16 @@
 #define LCD	P1
 #define EN	P3_7
 #define RS	P3_6
-#define	DISPLAY P2
 
 // ta sobrando 2 pinos de P2
-void display_1(void); // Display 1 = Dezena minutos
-void display_2(void); // Display 2 = Unidade minutos
-void display_3(void); // Display 3 = Dezena segundos
-void display_4(void); // Display 4 = Unidade segundos
+void display_1(char number); // Display 1 = Unidade segundos
+void display_2(char number); // Display 2 = Dezena segundos
+void display_3(char number); // Display 3 = Unidade minutos
+void display_4(char number); // Display 4 = Dezena minutos
+
+void number_to_port (char number);
+
+
 void config_lcd(void);
 void line_1(void);
 void line_2(void);
@@ -18,7 +21,7 @@ void write_msg(char msg[]);
 void wr_cmd(void);
 void wr_char(void);
 void delay_5us(void);
-
+void delay_50us(void);
 
 
 void set_power(void);
@@ -26,7 +29,7 @@ void delay_ms(unsigned int ms);
 
 char power = '9'; // a potencia maxima tem que ser 9 por que "10" usa mais que 8 bits..
 				  // podemos imprimir 10 quando a potencia for 9 etc
-
+char aux = 0;
 
 void main () {
 	config_lcd();
@@ -34,47 +37,127 @@ void main () {
 	write_msg("Inicializando...");
 	delay_ms(1);		
 	while(1) {
-		DISPLAY = 999;
+		display_1(1);
+		display_2(2);
+		display_3(3);
+		display_4(4);	
+		//aux ++;
+		delay_ms(1);
+	}		
+}
+
+void number_to_port (char number){
+	if (number == 9){
+		P2_0 = 1;
+		P2_1 = 0;
+		P2_2 = 0;
+		P2_3 = 1;
+		delay_50us();
+
 	}
-		
+	else if (number == 8){
+		P2_0 = 0;
+		P2_1 = 0;
+		P2_2 = 0;
+		P2_3 = 1;
+		delay_50us();
+	}
+	else if (number == 7){
+		P2_0 = 1;
+		P2_1 = 1;
+		P2_2 = 1;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 6){
+		P2_0 = 0;
+		P2_1 = 1;
+		P2_2 = 1;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 5){
+		P2_0 = 1;
+		P2_1 = 0;
+		P2_2 = 1;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 4){
+		P2_0 = 0;
+		P2_1 = 0;
+		P2_2 = 1;
+		P2_3 = 0;
+		delay_50us();	
+	}
+	else if (number == 3){
+		P2_0 = 1;
+		P2_1 = 1;
+		P2_2 = 0;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 2){
+		P2_0 = 0;
+		P2_1 = 1;
+		P2_2 = 0;
+		P2_3 = 0;
+		delay_50us();	
+	}
+	else if (number == 1){
+		P2_0 = 1;
+		P2_1 = 0;
+		P2_2 = 0;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 0){
+		P2_0 = 0;
+		P2_1 = 0;
+		P2_2 = 0;
+		P2_3 = 0;
+		delay_50us();
+	}
+	
+	delay_ms(5);
 }
 
 
+void display_1(unsigned char number) {
+	P2_4 = 0;
+	P2_5 = 0;
+	delay_50us();
+	number_to_port(number);
+	delay_50us();
+}
 
+void display_2(unsigned char number) {
+	P2_4 = 1;
+	P2_5 = 0;
+	delay_50us();
+	number_to_port(number);
+	delay_50us();
+}
 
-void display_1(void) {
-	P2_0 = 1;
-	P2_1 = 0;
-	P2_2 = 1;
-	P2_3 = 0;
+void display_3(char number) {
+	P2_4 = 0;
+	P2_5 = 1;
+	delay_50us();
+	number_to_port(number);
+	delay_50us();
 
 }
 
-void display_2(void) {
-	P2_0 = 0;
-	P2_1 = 0;
-	P2_2 = 1;
-	P2_3 = 0;
-
-}
-
-void display_3(void) {
-	P2_0 = 1;
-	P2_1 = 0;
-	P2_2 = 0;
-	P2_3 = 1;
-
-}
-
-void display_4(void) {
-	P2_0 = 1;
-	P2_1 = 0;
-	P2_2 = 1;
-	P2_3 = 0;
-
+void display_4(char number) {
+	P2_4 = 1;
+	P2_5 = 1;
+	delay_50us();
+	number_to_port(number);
+	delay_50us();
 }
 
 
+// ------------- Controle de Potência ------------- //
 void set_power (void) { // potencia começa em 10 e a cada clique do botão diminui em 1 unidade. potencia maxima = 10
 	if (power == '0'){
 		power = '9';
@@ -84,14 +167,14 @@ void set_power (void) { // potencia começa em 10 e a cada clique do botão diminu
 	}
 	delay_ms(10);
 	write_msg("Potencia: ");
-	delay_ms(1);
+	delay_50us();
 	LCD = power;
 	wr_char();
 	delay_5us();
 }
 
 
-// ----- Funções do LCD -----//
+// ------------- Funções do LCD ------------- //
 
 void config_lcd(void) {
 	LCD = 0x38;
@@ -156,10 +239,18 @@ void wr_char(void)
 	delay_ms(5);
 }
 
-void delay_5us(void)
-{
+
+
+// ------------- Funções de Delay ------------- //
+void delay_5us(void) {
 	unsigned char i;
 	for(i = 0; i < 5; i++){}
+}
+
+
+void delay_50us(void) {
+	unsigned char i;
+	for(i = 0; i < 50; i++){}
 }
 
 
