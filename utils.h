@@ -32,7 +32,8 @@ void check_line_3(void);
 void number_to_port (char number);
 void set_display (char Number);
 void print_display (void);
-
+void print_display_sec (void);
+void print_display_keypad (void);
 
 
 void config_lcd(void);
@@ -41,6 +42,7 @@ void line_2(void);
 void write_msg(char msg[]);
 void wr_cmd(void);
 void wr_char(void);
+void clear_lcd(void);
 
 
 void open_door (void);
@@ -48,10 +50,13 @@ void start_stop (void);
 
 void set_power(void);
 
+void timer_dec (void);
+
+
 void delay_5us(void);
 void delay_50us(void);
 void delay_ms(unsigned int ms);
-
+void delay_ms_print(unsigned int ms);
 
 
 // ------------- Funções do LCD ------------- //
@@ -147,4 +152,3 @@ void delay_ms(unsigned int ms) {		// Delay por polling via T/C 0.
 		ms--;
 	}
 }
-
