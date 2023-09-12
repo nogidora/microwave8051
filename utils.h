@@ -38,26 +38,24 @@ void print_display_keypad (void);
 
 void config_lcd(void);
 void line_1(void);
-void line_2(void);
+//void line_2(void);
 void write_msg(char msg[]);
 void wr_cmd(void);
 void wr_char(void);
 void clear_lcd(void);
 
 
-void open_door (void);
+void ISR_open_door (void);
 void start_stop (void);
 
 void set_power(void);
 
 void timer_dec (void);
 
-
 void delay_5us(void);
 void delay_50us(void);
 void delay_ms(unsigned int ms);
 void delay_ms_print(unsigned int ms);
-
 
 // ------------- Funções do LCD ------------- //
 void config_lcd(void) {
@@ -77,10 +75,11 @@ void line_1(void) {
 	wr_cmd();
 }
 
+/* 
 void line_2(void) {
 	LCD = 0xC0;
 	wr_cmd();
-}
+} */
 
 void clear_lcd(void) {
 	LCD = 0x01;
@@ -107,8 +106,7 @@ void write_msg(char msg[]) {
 	return;
 }
 
-void wr_cmd(void)
-{
+void wr_cmd(void) {
 	RS = 0;
 	EN = 1;
 	delay_5us();

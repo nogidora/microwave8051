@@ -9,36 +9,38 @@
 char Power = '9'; // A potência máxima deve ser 9 por que "10" usaria mais que 8 bits.
 				  
 				  
-char NumberOfDigits = '0';		// Armazena a quantidade de digitos para facilitar a utilização do display 7 seg.
-char Number1, Number2, Number3, Number4 = '\0'; // Números correspondente aos displays 4, 3, 2 e 1, respectivamente.
+char NumberOfDigits = 0;		// Armazena a quantidade de digitos para facilitar a utilização do display 7 seg.
+char Number1, Number2, Number3, Number4 = 0; // Números correspondente aos displays 4, 3, 2 e 1, respectivamente.
 
 void main () {
+	IE = 0x85;						// Habilita interrupções globais, interrupção externa 0, 1
 	P0 = 0x00;						// Inicializa P0 como saída.
 	config_lcd();					// Configura display LCD.
 	write_msg("Inicializando..."); 	// Mensagem Inicial.
-	delay_ms(1);
+	delay_ms(500);
+	clear_lcd();
 	keyboard_input();				// Função que recebe entrada de tempo.
 	delay_ms(1);
 	
 }
 // ------------- Funções do Display de 7 Segmentos ------------- // 
 void set_display (char Number) {			// Ordena os números conforme a quantidade inserida
-	if (NumberOfDigits == '0') {	
+	if (NumberOfDigits == 0) {	
 		Number1 = Number;
 		NumberOfDigits++;
 	}
-	else if (NumberOfDigits == '1') {
+	else if (NumberOfDigits == 1) {
 		Number2 = Number1;
 		Number1 = Number;
 		NumberOfDigits++;
 	}
-	else if (NumberOfDigits == '2') {
+	else if (NumberOfDigits == 2) {
 		Number3 = Number2;
 		Number2 = Number1;
 		Number1 = Number;
 		NumberOfDigits++;
 	}
-	else if (NumberOfDigits == '3') {
+	else if (NumberOfDigits == 3) {
 		Number4 = Number3;
 		Number3 = Number2;
 		Number2 = Number1;
@@ -46,11 +48,11 @@ void set_display (char Number) {			// Ordena os números conforme a quantidade in
 		NumberOfDigits++;
 	}
 	else {						// Se insere mais de 4 dígitos a leitura recomeça.
-		NumberOfDigits = '\0';
-		Number1 = '\0';
-		Number2 = '\0';
-		Number3 = '\0';
-		Number4 = '\0';
+		NumberOfDigits = 0;
+		Number1 = 0;
+		Number2 = 0;
+		Number3 = 0;
+		Number4 = 0;
 		set_display(Number1);
 	}
 }
@@ -60,7 +62,7 @@ void print_display (void) {
 	display_3(Number3);
 	display_2(Number2);
 	display_1(Number1);
-	delay_5us();				// Delay para que exibição no display.
+	delay_50us();				// Delay para que exibição no display.
 	return;
 }
 
@@ -69,14 +71,15 @@ void print_display (void) {
 
 // ------------- Funções do Teclado ------------- //
 void keyboard_input(void) {			// Obtem entrada do teclado.
+	write_msg("Insira o tempo");
 	while(1) {	
 		check_line_0();				// Verifica a linha 0 do keypad.
 		check_line_1();				// Verifica a linha 1 do keypad.
 		check_line_2();				// Verifica a linha 2 do keypad.
 		check_line_3();				// Verifica a linha 3 do keypad.
-		if (NumberOfDigits >'0') {	// Imprime no display conforme os números são digitados
-			print_display();
-		}
+		print_display();			// Imprime os dígitos conforme são inseridos
+		delay_50us();
+	
 	}
 }
 
@@ -103,7 +106,7 @@ void check_line_0(void) {		// Conjunto de funções que verificam as linhas
 		set_display(3);
 		while(Coluna2 == 0);
 	}
-	delay_50us();				// Delay de 50 us.
+	delay_50us();				// Delay de 5 us.
 }
 
 void check_line_1(void) {
@@ -128,7 +131,7 @@ void check_line_1(void) {
 		set_display(6);
 		while(Coluna2 == 0);
 	}
-	delay_50us();				// Delay de 50 us.
+	delay_50us();				// Delay de 5 us.
 }
 
 void check_line_2(void) {
@@ -153,7 +156,7 @@ void check_line_2(void) {
 		set_display(9);
 		while(Coluna2 == 0);
 	}
-	delay_50us();				// Delay de 50 us.
+	delay_50us();				// Delay de 5 us.
 }
 void check_line_3(void) {
 
@@ -177,7 +180,7 @@ void check_line_3(void) {
 		set_power();
 		while(Coluna2 == 0);
 	}
-	delay_50us();				// Delay de 50 us.
+	delay_50us();				// Delay de 5 us.
 }
 
 
@@ -260,9 +263,9 @@ void number_to_port (char number){
 
 // ------------- Funções que atualizam o display ------------- //
 void display_1(char number) {
-	P2_4 = 0;
-	P2_5 = 0;
-	delay_50us();
+	P2_4 = 0;					// Seleciona o display de 7 segmentos acionado pelos pinos do MC.
+	P2_5 = 0;					
+	delay_50us();				// Delay para evitar conflito de dados durante uma troca de número
 	number_to_port(number);
 	delay_50us();
 	return;
@@ -298,21 +301,35 @@ void display_4(char number) {
 
 
 // ------------- Interrupções / Parar/Continuar ------------- //
-void open_door (void) interrupt 0 { // Utiliza interrupção externa 0 (maior prioridade)
+void ISR_open_door (void) interrupt 0 { // Utiliza interrupção externa 0 (maior prioridade)
+	write_msg("PORTA ABERTA");
+	wr_char();
 	while (P3_2 == 0);
-	// TR1 = !(TR1) // Para ou reinicia a contagem
+	clear_lcd();
+	//IT0 = 0;
+	return;
 }
 
-void stop_start (void) interrupt 3 { // Utiliza interrupção externa 1
+void stop_start (void) interrupt 2 { // Utiliza interrupção externa 1
 	P3_3 = !(P3_3);
 	// TR1 = !(TR1) // Para ou reinicia a contagem
 	return;
 
 }
 
-//void time_out (void) interrupt X`{
+
+void time_out (void) {
+	int i = 0;
+	
+	write_msg("TIME OUT");
 	// Quando estoura o timer: beepa o buzzer 5 vezes e volta pro início. (keypad input)
-//}
+	for (i = 0; i < 5; i++) {
+		P2_6 = 1;
+		delay_ms(998);
+		P2_6 = 0;
+	}
+
+}
 
 
 // ------------- Controle de Potência ------------- //
@@ -335,7 +352,7 @@ void set_power (void) { // potencia começa em 10 e a cada clique do botão diminu
 	delay_50us();
 	LCD = (Power + 1);
 	wr_char();
-	delay_5us();
+	delay_50us();
 	return;
 }
 
@@ -345,10 +362,10 @@ void timer_dec (void) {			// Quando chama essa função não será feito mais nada a
 		delay_ms_print(42);
 		Number1--;
 		
-		if (Number4 != '\0') {				// Se ainda tem dezenas de minutos
-			if (Number3 == '\0'){			// Mas a unidade de minutos está em zero
-				if (Number2 == '\0'){		// E a dezena de segundos está em zero
-					if (Number1 == '\0'){	// E a Unidade de segundos também é zero
+		if (Number4 != 0) {				// Se ainda tem dezenas de minutos
+			if (Number3 == 0){			// Mas a unidade de minutos está em zero
+				if (Number2 == 0){		// E a dezena de segundos está em zero
+					if (Number1 == 0){	// E a Unidade de segundos também é zero
 						delay_ms_print(42);
 						Number4--;
 						Number3 = 9;
@@ -359,9 +376,9 @@ void timer_dec (void) {			// Quando chama essa função não será feito mais nada a
 			}
 		}
 		
-		if (Number3 != '\0') {
-			if (Number2 == '\0') {
-				if (Number1 == '\0') {
+		if (Number3 != 0) {
+			if (Number2 == 0) {
+				if (Number1 == 0) {
 					delay_ms_print(42);
 					Number3--;
 					Number2 = 5;
@@ -370,18 +387,16 @@ void timer_dec (void) {			// Quando chama essa função não será feito mais nada a
 			}
 		}
 		
-		if (Number2 != '\0') {
-			if (Number1 == '\0'){
+		if (Number2 != 0) {
+			if (Number1 == 0){
 				delay_ms_print(42);
 				Number1 = 9;
 				Number2--;
 			}
 		}
-	
-		if (Number1 != '\0'){
-		}
 	}
 	write_msg("Finalizado");
+	time_out();
 
 	// Ao final setar a flag de interrupção por timer T1. e também tratar essa interrupção
 }
