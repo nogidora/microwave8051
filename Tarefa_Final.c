@@ -12,7 +12,7 @@ char Power = '9'; // a potencia maxima tem que ser 9 por que "10" usa mais que 8
 				  
 				  
 char NumberOfDigits = '0';		// Armazena a quantidade de digitos para facilitar a utilização do display 7 seg.
-char Number1, Number2, Number3, Number4; // Números correspondente aos displays 4, 3, 2 e 1, respectivamente.
+char Number1, Number2, Number3, Number4 = '\0'; // Números correspondente aos displays 4, 3, 2 e 1, respectivamente.
 
 void main () {
 	P0 = 0x00;					// Inicializa P0 como saída.
@@ -31,7 +31,7 @@ void keyboard_input(void) {
 		check_line_2();			// Verifica a linha 2 do keypad.
 		check_line_3();			// Verifica a linha 3 do keypad.
 		if (NumberOfDigits >'0') {
-			print_display();
+			print_display_keypad();
 		}
 	}
 }
@@ -60,38 +60,63 @@ void set_display (char Number) {
 		NumberOfDigits++;
 	}
 	else {
-		NumberOfDigits = '0';
-		Number1 = '0';
-		Number2 = '0';
-		Number3 = '0';
-		Number4 = '0';
+		NumberOfDigits = '\0';
+		Number1 = '\0';
+		Number2 = '\0';
+		Number3 = '\0';
+		Number4 = '\0';
 		set_display(Number);
 	}
 }
 
-void print_display (void) {
-	if (NumberOfDigits == '0') {
+
+void print_display_keypad (void) { // VERIFICAR NECESSIDADE DESSA FUNÇÃO AO FINAL
+	if (NumberOfDigits == '1') {
 		display_1(Number1);
-	}
-	else if (NumberOfDigits == '1') {
-		display_1(Number1);
-		display_2(Number2);
 	}
 	else if (NumberOfDigits == '2') {
-		display_1(Number1);
 		display_2(Number2);
-		display_3(Number3);
+		display_1(Number1);
 	}
 	else if (NumberOfDigits == '3') {
-		display_1(Number1);
-		display_2(Number2);
 		display_3(Number3);
+		display_2(Number2);
+		display_1(Number1);
+	}
+	else if (NumberOfDigits == '4') {
 		display_4(Number4);
+		display_3(Number3);
+		display_2(Number2);
+		display_1(Number1);
+	}
+
+	delay_5us();
+}
+
+
+void print_display (void) {
+	if (NumberOfDigits == '1') {
+		display_1(Number1);
+	}
+	else if (NumberOfDigits == '2') {
+		display_2(Number2);
+		display_1(Number1);
+	}
+	else if (NumberOfDigits == '3') {
+		display_3(Number3);
+		display_2(Number2);
+		display_1(Number1);
+	}
+	else if (NumberOfDigits == '4') {
+		display_4(Number4);
+		display_3(Number3);
+		display_2(Number2);
+		display_1(Number1);
 	}
 
 	delay_50us();
+	return;
 }
-
 
 void check_line_0(void) {
 	Linha0 = 0;					// Ao zerar uma linha, esta fica ativa para receber entradas
@@ -175,7 +200,7 @@ void check_line_3(void) {
 	Linha3 = 0;						// Ativa a linha 3
 	if (Coluna0 == 0) {				// Tecla *. 
 	
-		//set_display('*');  // Aqui pode ser o start_stop / add + 30 segndos (usando uma flag)
+		timer_dec();  // Aqui pode ser o start_stop / add + 30 segndos (usando uma flag)
 		while(Coluna0 == 0);
 	}
 	
@@ -271,21 +296,23 @@ void number_to_port (char number){
 	delay_ms(5);
 }
 
-
-void display_1(unsigned char number) {
+// ------------- Funções que atualizam o display ------------- //
+void display_1(char number) {
 	P2_4 = 0;
 	P2_5 = 0;
 	delay_50us();
 	number_to_port(number);
 	delay_50us();
+	return;
 }
 
-void display_2(unsigned char number) {
+void display_2(char number) {
 	P2_4 = 1;
 	P2_5 = 0;
 	delay_50us();
 	number_to_port(number);
 	delay_50us();
+	return;
 }
 
 void display_3(char number) {
@@ -294,7 +321,7 @@ void display_3(char number) {
 	delay_50us();
 	number_to_port(number);
 	delay_50us();
-
+	return;
 }
 
 void display_4(char number) {
@@ -303,6 +330,7 @@ void display_4(char number) {
 	delay_50us();
 	number_to_port(number);
 	delay_50us();
+	return;
 }
 
 
@@ -349,4 +377,58 @@ void set_power (void) { // potencia começa em 10 e a cada clique do botão diminu
 	return;
 }
 
+// ------------- Temporizador decrescente ------------- //
+void timer_dec (void) {			// Quando chama essa função não será feito mais nada além de
+	while (!((Number1 == '\0') && (Number2 == '\0') && (Number3 == '\0') && (Number4 == '\0'))) {					//  contar o tempo e acionar o motor, então não será tratado entradas do keypad durante sua execução
+		
+		delay_ms_print(55);
+		Number1--;
+		
+		if (Number4 != '\0') {				// Se ainda tem dezenas de minutos
+			if (Number3 == '\0'){			// Mas a unidade de minutos está em zero
+				if (Number2 == '\0'){		// E a dezena de segundos está em zero
+					if (Number1 == '\0'){	// E a Unidade de segundos também é zero
+						delay_ms_print(57);
+						Number4--;
+						Number3 = 9;
+						Number2 = 5;
+						Number1 = 9;
+					}
+				}
+			}
+		}
+		
+		if (Number3 != '\0') {
+			if (Number2 == '\0') {
+				if (Number1 == '\0') {
+					delay_ms_print(55);
+					Number3--;
+					Number2 = 5;
+					Number1 = 9;
+				}
+			}
+		}
+		
+		if (Number2 != '\0') {
+			if (Number1 == '\0'){
+				delay_ms_print(55);
+				Number1 = 9;
+				Number2--;
+			}
+		}
+	
+		if (Number1 == '\0'){
+		}
+	}	
 
+	// Ao final setar a flag de interrupção por timer T1. e também tratar essa interrupção
+}
+
+void delay_ms_print(unsigned int ms) {	
+	char i = 0;
+	for (i = 0; i < ms; i++) {
+		print_display();
+		delay_ms(1);
+	}
+	return;
+}
