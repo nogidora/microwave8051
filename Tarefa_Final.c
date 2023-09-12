@@ -2,29 +2,28 @@
 #include <string.h>
 #include <utils.h>
 
-// ta sobrando 2 pinos de P2
+// Anotações
+// - sobrando 2 pinos de P2
 
 // ---------------- Variáveis ------------------ //
-char Power = '9'; // a potencia maxima tem que ser 9 por que "10" usa mais que 8 bits..
-				  // podemos imprimir 10 quando a potencia for 9 etc
+char Power = '9'; // A potência máxima deve ser 9 por que "10" usaria mais que 8 bits.
 				  
 				  
 char NumberOfDigits = '0';		// Armazena a quantidade de digitos para facilitar a utilização do display 7 seg.
 char Number1, Number2, Number3, Number4 = '\0'; // Números correspondente aos displays 4, 3, 2 e 1, respectivamente.
 
 void main () {
-	P0 = 0x00;					// Inicializa P0 como saída.
-	config_lcd();
-	write_msg("Inicializando...");
+	P0 = 0x00;						// Inicializa P0 como saída.
+	config_lcd();					// Configura display LCD.
+	write_msg("Inicializando..."); 	// Mensagem Inicial.
 	delay_ms(1);
-	keyboard_input();
+	keyboard_input();				// Função que recebe entrada de tempo.
 	delay_ms(1);
 	
 }
-
-
-void set_display (char Number) {
-	if (NumberOfDigits == '0') {
+// ------------- Funções do Display de 7 Segmentos ------------- // 
+void set_display (char Number) {			// Ordena os números conforme a quantidade inserida
+	if (NumberOfDigits == '0') {	
 		Number1 = Number;
 		NumberOfDigits++;
 	}
@@ -46,23 +45,22 @@ void set_display (char Number) {
 		Number1 = Number;
 		NumberOfDigits++;
 	}
-	else {
+	else {						// Se insere mais de 4 dígitos a leitura recomeça.
 		NumberOfDigits = '\0';
 		Number1 = '\0';
 		Number2 = '\0';
 		Number3 = '\0';
 		Number4 = '\0';
-		set_display(Number);
+		set_display(Number1);
 	}
 }
 
 void print_display (void) {
-
-	display_4(Number4);
+	display_4(Number4);			// Coloca cada dígito em seu devido display.
 	display_3(Number3);
 	display_2(Number2);
 	display_1(Number1);
-	delay_5us();
+	delay_5us();				// Delay para que exibição no display.
 	return;
 }
 
@@ -70,28 +68,28 @@ void print_display (void) {
 
 
 // ------------- Funções do Teclado ------------- //
-
-void keyboard_input(void) {
+void keyboard_input(void) {			// Obtem entrada do teclado.
 	while(1) {	
-		check_line_0();			// Verifica a linha 0 do keypad.
-		check_line_1();			// Verifica a linha 1 do keypad.
-		check_line_2();			// Verifica a linha 2 do keypad.
-		check_line_3();			// Verifica a linha 3 do keypad.
-		if (NumberOfDigits >'0') {
+		check_line_0();				// Verifica a linha 0 do keypad.
+		check_line_1();				// Verifica a linha 1 do keypad.
+		check_line_2();				// Verifica a linha 2 do keypad.
+		check_line_3();				// Verifica a linha 3 do keypad.
+		if (NumberOfDigits >'0') {	// Imprime no display conforme os números são digitados
 			print_display();
 		}
 	}
 }
 
 
-void check_line_0(void) {
+void check_line_0(void) {		// Conjunto de funções que verificam as linhas
 	Linha0 = 0;					// Ao zerar uma linha, esta fica ativa para receber entradas
 	Linha1 = 1;					// Ao setar uma linha, esta fica inativa para entradas.
 	Linha2 = 1;
 	Linha3 = 1;
 	if (Coluna0 == 0) {			// Tecla 1.
 	
-		set_display(1);					while(Coluna0 == 0);	// Debouncing do botão. Garante que não será acionado mais de uma vez antes de ser solto.
+		set_display(1);					
+		while(Coluna0 == 0);	// Debouncing do botão. Garante que não será acionado mais de uma vez antes de ser solto.
 	}
 	
 	if (Coluna1 == 0) {			// Tecla 2.
@@ -163,9 +161,8 @@ void check_line_3(void) {
 	Linha1 = 1;
 	Linha2 = 1;
 	Linha3 = 0;						// Ativa a linha 3
-	if (Coluna0 == 0) {				// Tecla *. 
-	
-		timer_dec();  // Aqui pode ser o start_stop / add + 30 segndos (usando uma flag)
+	if (Coluna0 == 0) {				// Tecla * corresponde ao acionamento do forno. 
+		timer_dec(); 				// Aqui pode ser o start_stop / add + 30 segndos (usando uma flag) ?
 		while(Coluna0 == 0);
 	}
 	
@@ -175,7 +172,7 @@ void check_line_3(void) {
 		while(Coluna1 == 0);
 	}
 	
-	if (Coluna2 == 0) {				// Tecla #.
+	if (Coluna2 == 0) {				// Tecla # corresponde ao ajuste de potência.
 	
 		set_power();
 		while(Coluna2 == 0);
