@@ -4,8 +4,6 @@
 
 // ta sobrando 2 pinos de P2
 
-
-
 // ---------------- Variáveis ------------------ //
 char Power = '9'; // a potencia maxima tem que ser 9 por que "10" usa mais que 8 bits..
 				  // podemos imprimir 10 quando a potencia for 9 etc
@@ -24,17 +22,6 @@ void main () {
 	
 }
 
-void keyboard_input(void) {
-	while(1) {	
-		check_line_0();			// Verifica a linha 0 do keypad.
-		check_line_1();			// Verifica a linha 1 do keypad.
-		check_line_2();			// Verifica a linha 2 do keypad.
-		check_line_3();			// Verifica a linha 3 do keypad.
-		if (NumberOfDigits >'0') {
-			print_display_keypad();
-		}
-	}
-}
 
 void set_display (char Number) {
 	if (NumberOfDigits == '0') {
@@ -69,54 +56,33 @@ void set_display (char Number) {
 	}
 }
 
-
-void print_display_keypad (void) { // VERIFICAR NECESSIDADE DESSA FUNÇÃO AO FINAL
-	if (NumberOfDigits == '1') {
-		display_1(Number1);
-	}
-	else if (NumberOfDigits == '2') {
-		display_2(Number2);
-		display_1(Number1);
-	}
-	else if (NumberOfDigits == '3') {
-		display_3(Number3);
-		display_2(Number2);
-		display_1(Number1);
-	}
-	else if (NumberOfDigits == '4') {
-		display_4(Number4);
-		display_3(Number3);
-		display_2(Number2);
-		display_1(Number1);
-	}
-
-	delay_5us();
-}
-
-
 void print_display (void) {
-	if (NumberOfDigits == '1') {
-		display_1(Number1);
-	}
-	else if (NumberOfDigits == '2') {
-		display_2(Number2);
-		display_1(Number1);
-	}
-	else if (NumberOfDigits == '3') {
-		display_3(Number3);
-		display_2(Number2);
-		display_1(Number1);
-	}
-	else if (NumberOfDigits == '4') {
-		display_4(Number4);
-		display_3(Number3);
-		display_2(Number2);
-		display_1(Number1);
-	}
 
-	delay_50us();
+	display_4(Number4);
+	display_3(Number3);
+	display_2(Number2);
+	display_1(Number1);
+	delay_5us();
 	return;
 }
+
+
+
+
+// ------------- Funções do Teclado ------------- //
+
+void keyboard_input(void) {
+	while(1) {	
+		check_line_0();			// Verifica a linha 0 do keypad.
+		check_line_1();			// Verifica a linha 1 do keypad.
+		check_line_2();			// Verifica a linha 2 do keypad.
+		check_line_3();			// Verifica a linha 3 do keypad.
+		if (NumberOfDigits >'0') {
+			print_display();
+		}
+	}
+}
+
 
 void check_line_0(void) {
 	Linha0 = 0;					// Ao zerar uma linha, esta fica ativa para receber entradas
@@ -125,8 +91,7 @@ void check_line_0(void) {
 	Linha3 = 1;
 	if (Coluna0 == 0) {			// Tecla 1.
 	
-		set_display(1);			// Escreve na serial.
-		while(Coluna0 == 0);	// Debouncing do botão. Garante que não será acionado mais de uma vez antes de ser solto.
+		set_display(1);					while(Coluna0 == 0);	// Debouncing do botão. Garante que não será acionado mais de uma vez antes de ser solto.
 	}
 	
 	if (Coluna1 == 0) {			// Tecla 2.
@@ -219,7 +184,7 @@ void check_line_3(void) {
 }
 
 
-
+// ------------- Função que converte os números para o sinal da porta ------------- //
 void number_to_port (char number){
 	if (number == 9){
 		P2_0 = 1;
@@ -380,15 +345,14 @@ void set_power (void) { // potencia começa em 10 e a cada clique do botão diminu
 // ------------- Temporizador decrescente ------------- //
 void timer_dec (void) {			// Quando chama essa função não será feito mais nada além de
 	while (!((Number1 == '\0') && (Number2 == '\0') && (Number3 == '\0') && (Number4 == '\0'))) {					//  contar o tempo e acionar o motor, então não será tratado entradas do keypad durante sua execução
-		
-		delay_ms_print(55);
+		delay_ms_print(42);
 		Number1--;
 		
 		if (Number4 != '\0') {				// Se ainda tem dezenas de minutos
 			if (Number3 == '\0'){			// Mas a unidade de minutos está em zero
 				if (Number2 == '\0'){		// E a dezena de segundos está em zero
 					if (Number1 == '\0'){	// E a Unidade de segundos também é zero
-						delay_ms_print(57);
+						delay_ms_print(42);
 						Number4--;
 						Number3 = 9;
 						Number2 = 5;
@@ -401,7 +365,7 @@ void timer_dec (void) {			// Quando chama essa função não será feito mais nada a
 		if (Number3 != '\0') {
 			if (Number2 == '\0') {
 				if (Number1 == '\0') {
-					delay_ms_print(55);
+					delay_ms_print(42);
 					Number3--;
 					Number2 = 5;
 					Number1 = 9;
@@ -411,15 +375,16 @@ void timer_dec (void) {			// Quando chama essa função não será feito mais nada a
 		
 		if (Number2 != '\0') {
 			if (Number1 == '\0'){
-				delay_ms_print(55);
+				delay_ms_print(42);
 				Number1 = 9;
 				Number2--;
 			}
 		}
 	
-		if (Number1 == '\0'){
+		if (Number1 != '\0'){
 		}
-	}	
+	}
+	write_msg("Finalizado");
 
 	// Ao final setar a flag de interrupção por timer T1. e também tratar essa interrupção
 }
