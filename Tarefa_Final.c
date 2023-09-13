@@ -15,7 +15,8 @@ char PauseFlag = 0;
 void main() {
 	IE = 0x85;						// Habilita interrupções globais, interrupção externa 0, 1
 	P0 = 0x00;						// Inicializa P0 como saída.
-	P2_6 = 0;
+	BUZZER = 0;
+	MOTOR = 0;
 	IT1 = 1;						// Interrupção externa sensível a borda de descida.
 	config_lcd();					// Configura display LCD.
 	write_msg("Inicializando..."); 	// Mensagem Inicial.
@@ -83,20 +84,26 @@ void check_line_0(void) {			// Conjunto de funções que verificam as linhas
 	if (Coluna0 == 0) {				// Tecla 1.
 		set_display(1);					
 		while(Coluna0 == 0) {
+			BUZZER = 1;
 			print_display();
 		}		// Debouncing do botão. Garante que não será acionado mais de uma vez antes de ser solto.
+		BUZZER = 0;
 	}
 	if (Coluna1 == 0) {				// Tecla 2.
 		set_display(2);
 		while(Coluna1 == 0) {
+			BUZZER = 1;
 			print_display();
-		}		
+		}
+		BUZZER = 0;
 	}
 	if (Coluna2 == 0) {				// Tecla 3.
 		set_display(3);
 		while(Coluna2 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	delay_50us();					// Delay de 5 us.
 }
@@ -108,20 +115,26 @@ void check_line_1(void) {
 	if (Coluna0 == 0) {				// Tecla 4.
 		set_display(4);
 		while(Coluna0 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	if (Coluna1 == 0) {				// Tecla 5.
 		set_display(5);
 		while(Coluna1 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	if (Coluna2 == 0) {				// Tecla 6.
 		set_display(6);
 		while(Coluna2 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	delay_50us();					// Delay de 5 us.
 }
@@ -133,20 +146,26 @@ void check_line_2(void) {
 	if (Coluna0 == 0) {				// Tecla 7.
 		set_display(7);
 		while(Coluna0 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	if (Coluna1 == 0) {				// Tecla 8.
 		set_display(8);
 		while(Coluna1 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	if (Coluna2 == 0) {				// Tecla 9.
 		set_display(9);
 		while(Coluna2 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	delay_50us();					// Delay de 5 us.
 }
@@ -156,22 +175,28 @@ void check_line_3(void) {
 	Linha0 = Linha1 = Linha2 = 1;
 	
 	if (Coluna0 == 0) {				// Tecla * corresponde ao acionamento do forno. 
+		BUZZER = 1;
 		timer_dec(); 				// Aqui pode ser o start_stop / add + 30 segndos (usando uma flag) ?
 		while(Coluna0 == 0) {
 			print_display();
 		}
+		
 	}
 	if (Coluna1 == 0) {				// Tecla 0.
 		set_display(0);
 		while(Coluna1 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	if (Coluna2 == 0) {				// Tecla # corresponde ao ajuste de potência.
 		set_power();
 		while(Coluna2 == 0) {
+			BUZZER = 1;
 			print_display();
 		}
+		BUZZER = 0;
 	}
 	delay_50us();				// Delay de 5 us.
 }
@@ -255,6 +280,7 @@ void display_4(char number) {
 
 // ------------- Interrupções / Parar/Continuar ------------- //
 void ISR_open_door(void) interrupt 0 { 	// Utiliza interrupção externa 0 (maior prioridade)
+	MOTOR = 0;
 	write_msg("PORTA ABERTA");
 	while (P3_2 == 0){
 		print_display();
@@ -278,17 +304,18 @@ void ISR_stop_start (void) interrupt 2 {		// Utiliza interrupção externa 1
 
 void time_out(void) {
 	int i;
-	
-	
 	// Quando estoura o timer: beepa o buzzer 5 vezes e volta pro início. (keypad input)
 	for (i = 0; i < 5; i++) {
-		P2_6 = 1;
+		BUZZER = 1;
 		write_msg("TIME OUT");
-		delay_ms_print(20); // Não pisca todo display 7 seg.
+		delay_ms_print(17); // Não pisca todo display 7 seg. Talvez implementar alguma função para dar clear ou add o caso em display_1 ('vazio') para que deixe o display em branco
 		clear_lcd();
-		P2_6 = 0;
-		delay_ms(777);
+		BUZZER = 0;
+		delay_ms(444);
 	}
+	
+	NumberOfDigits = 0;
+	Number1 = Number2 = Number3 = Number4 = 0;
 	keyboard_input();
 }
 
@@ -315,8 +342,18 @@ void set_power(void) { // potencia começa em 10 e a cada clique do botão dimin
 
 // ------------- Temporizador decrescente ------------- //
 void timer_dec(void) {			// Quando chama essa função não será feito mais nada além de
+	MOTOR = 1;
+	BUZZER = 0;
 	while (!((Number1 == 0) && (Number2 == 0) && (Number3 == 0) && (Number4 == 0))) {					//  contar o tempo e acionar o motor, ent�o n�o ser� tratado entradas do keypad durante sua execu��o
+		if (Number2 != 0 && Number1 == 0) {
+			delay_ms_print(42);
+			Number2--;
+			Number1 = 9;
+			
+		}		
+		
 		delay_ms_print(42);
+		Number1--;
 		if (Number4 != 0 && Number3 == 0 && Number2 == 0 && Number1 == 0) { 	
 			delay_ms_print(42);			// Se ainda tem dezenas de minutos				
 			Number4--;					// Mas a unidade de minutos estão em zero
@@ -330,20 +367,14 @@ void timer_dec(void) {			// Quando chama essa função não será feito mais nad
 			Number2 = 5;
 			Number1 = 9;
 		}
-		if (Number2 != 0 && Number1 == 0) {
-			delay_ms_print(42);
-			Number1 = 9;
-			Number2--;
-		}
-		Number1--;
-		
+
 	}
+	MOTOR = 0;
 	write_msg("Finalizado");
 	time_out();
-	// Ao final setar a flag de interrup��o por timer T1. e tamb�m tratar essa interrup��o
 }
 
-void delay_ms_print(unsigned int ms) {	
+void delay_ms_print(unsigned int ms) {	// Realiza um delay enquanto printa o Display 7 SEG
 	char i;
 	for (i = 0; i < ms; i++) {
 		print_display();
