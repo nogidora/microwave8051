@@ -7,6 +7,8 @@
 #define RS	P3_6
 #define MOTOR P2_7
 #define BUZZER P2_6
+#define LED P3_4
+
 
 #define Linha0 P1_0
 #define Linha1 P1_1
@@ -15,6 +17,7 @@
 #define Coluna0 P1_4
 #define Coluna1 P1_5
 #define Coluna2 P1_6
+#define Coluna3 P1_7
 
 void display_1(char number); // Display 1 = Unidade segundos
 void display_2(char number); // Display 2 = Dezena segundos
@@ -47,6 +50,11 @@ void ISR_start_stop (void);
 void set_power(void);
 
 void timer_dec (void);
+
+void brigadeiro (void);
+void pipoca (void);
+void desc_carne (void);
+void desc_feijao (void);
 
 void delay_5us(void);
 void delay_50us(void);

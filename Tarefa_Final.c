@@ -2,11 +2,8 @@
 #include <string.h>
 #include <utils.h>
 
-// Anotações
-// - sobrando 2 pinos de P2
-
 // ---------------- Variáveis ------------------ //
-char Power = '9'; // A potência máxima deve ser 9 por que "10" usaria mais que 8 bits.
+char Power = '9'; // A potência máxima usada é '9' por que "10" usaria mais que 8 bits.
 				  
 char NumberOfDigits = 0;						// Armazena a quantidade de digitos para facilitar a utilização do display 7 seg.
 char Number1, Number2, Number3, Number4 = 0;	// Números correspondente aos displays 4, 3, 2 e 1, respectivamente.
@@ -15,15 +12,15 @@ char PauseFlag = 0;
 void main() {
 	IE = 0x85;						// Habilita interrupções globais, interrupção externa 0, 1
 	P0 = 0x00;						// Inicializa P0 como saída.
-	BUZZER = 0;
-	MOTOR = 0;
+	BUZZER = 0;						// Buzzer inicia desativado.
+	MOTOR = 0;						// Motor inicia desligado.
+	LED = 1;						// Aciona o pino do LED pois o componente será ativo em nível baixo.
 	IT1 = 1;						// Interrupção externa sensível a borda de descida.
 	config_lcd();					// Configura display LCD.
 	write_msg("Inicializando..."); 	// Mensagem Inicial.
-	delay_ms(500);
-	clear_lcd();
+	delay_ms(550);					// Delay para ler a mensagem
+	clear_lcd();					// Limpa LCD
 	keyboard_input();				// Função que recebe entrada de tempo.
-	delay_ms(1);
 }
 
 // ------------- Funções do Display de 7 Segmentos ------------- // 
@@ -63,6 +60,117 @@ void print_display (void) {
 	delay_50us();				// Delay para que exibição no display.
 }
 
+// ------------- Funções que atualizam o display ------------- //
+void display_1(char number) {
+	P2_4 = 0;					// Seleciona o display de 7 segmentos acionado pelos pinos do MC.
+	P2_5 = 0;
+	delay_50us();						// Delay para evitar conflito de dados durante uma troca de número.
+	number_to_port(number);
+	delay_50us();
+}
+
+void display_2(char number) {
+	P2_4 = 1;
+	P2_5 = 0;
+	delay_50us();
+	number_to_port(number);
+	delay_50us();
+}
+
+void display_3(char number) {
+	P2_4 = 0;
+	P2_5 = 1;
+	delay_50us();
+	number_to_port(number);
+	delay_50us();
+}
+
+void display_4(char number) {
+	P2_4 = 1;
+	P2_5 = 1;
+	delay_50us();
+	number_to_port(number);
+	delay_50us();
+}
+// ------------- Função que converte os números para o sinal da porta ------------- //
+void number_to_port(char number) {
+	if (number == 9) {			// Verifica o número de entrada
+		P2_0 = 1;				// Aciona os respectivos pinos da porta P2.
+		P2_1 = 0;
+		P2_2 = 0;
+		P2_3 = 1;
+		delay_50us();
+
+	}
+	else if (number == 8) {
+		P2_0 = 0;
+		P2_1 = 0;
+		P2_2 = 0;
+		P2_3 = 1;
+		delay_50us();
+	}
+	else if (number == 7) {
+		P2_0 = 1;
+		P2_1 = 1;
+		P2_2 = 1;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 6) {
+		P2_0 = 0;
+		P2_1 = 1;
+		P2_2 = 1;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 5) {
+		P2_0 = 1;
+		P2_1 = 0;
+		P2_2 = 1;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 4) {
+		P2_0 = 0;
+		P2_1 = 0;
+		P2_2 = 1;
+		P2_3 = 0;
+		delay_50us();	
+	}
+	else if (number == 3) {
+		P2_0 = 1;
+		P2_1 = 1;
+		P2_2 = 0;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 2) {
+		P2_0 = 0;
+		P2_1 = 1;
+		P2_2 = 0;
+		P2_3 = 0;
+		delay_50us();	
+	}
+	else if (number == 1) {
+		P2_0 = 1;
+		P2_1 = 0;
+		P2_2 = 0;
+		P2_3 = 0;
+		delay_50us();
+	}
+	else if (number == 0) {
+		P2_0 = 0;
+		P2_1 = 0;
+		P2_2 = 0;
+		P2_3 = 0;
+		delay_50us();
+	}
+	delay_ms(5);
+}
+
+
+
+
 // ------------- Funções do Teclado ------------- //
 void keyboard_input(void) {			// Obtem entrada do teclado.
 	write_msg("Insira o tempo");
@@ -79,7 +187,9 @@ void keyboard_input(void) {			// Obtem entrada do teclado.
 
 void check_line_0(void) {			// Conjunto de funções que verificam as linhas
 	Linha0 = 0;						// Ao zerar uma linha, esta fica ativa para receber entradas
-	Linha1 = Linha2 = Linha3 = 1;	// Ao setar uma linha, esta fica inativa para entradas.
+	Linha1 = 1;						// Ao setar uma linha, esta fica inativa para entradas.
+	Linha2 = 1;
+	Linha3 = 1;
 
 	if (Coluna0 == 0) {				// Tecla 1.
 		set_display(1);					
@@ -105,12 +215,24 @@ void check_line_0(void) {			// Conjunto de funções que verificam as linhas
 		}
 		BUZZER = 0;
 	}
-	delay_50us();					// Delay de 5 us.
+	
+	if (Coluna3 == 0) {				// Brigadeiro
+		brigadeiro();
+		while(Coluna3 == 0) {
+			BUZZER = 1;
+			print_display();
+		}
+		BUZZER = 0;
+	}
+	
+	delay_50us();					// Delay de 50 us.
 }
 
 void check_line_1(void) {
+	Linha0 = 1;
 	Linha1 = 0;						// Ativa a linha 1
-	Linha0 = Linha2 = Linha3 = 1;
+	Linha2 = 1;
+	Linha3 = 1;
 
 	if (Coluna0 == 0) {				// Tecla 4.
 		set_display(4);
@@ -136,12 +258,22 @@ void check_line_1(void) {
 		}
 		BUZZER = 0;
 	}
+	if (Coluna3 == 0) {				// Pipoca
+		pipoca();
+		while(Coluna3 == 0) {
+			BUZZER = 1;
+			print_display();
+		}
+		BUZZER = 0;
+	}
 	delay_50us();					// Delay de 5 us.
 }
 
 void check_line_2(void) {
+	Linha0 = 1;
+	Linha1 = 1;
 	Linha2 = 0;						// Ativa a linha 2
-	Linha0 = Linha1 = Linha3 = 1;
+	Linha3 = 1;
 
 	if (Coluna0 == 0) {				// Tecla 7.
 		set_display(7);
@@ -167,13 +299,22 @@ void check_line_2(void) {
 		}
 		BUZZER = 0;
 	}
+	if (Coluna3 == 0) {				// Descongelar carne.
+		desc_carne();
+		while(Coluna3 == 0) {
+			BUZZER = 1;
+			print_display();
+		}
+		BUZZER = 0;
+	}
 	delay_50us();					// Delay de 5 us.
 }
 
 void check_line_3(void) {
+	Linha0 = 1;
+	Linha1 = 1;
+	Linha2 = 1;
 	Linha3 = 0;						// Ativa a linha 3
-	Linha0 = Linha1 = Linha2 = 1;
-	
 	if (Coluna0 == 0) {				// Tecla * corresponde ao acionamento do forno. 
 		BUZZER = 1;
 		timer_dec(); 				// Aqui pode ser o start_stop / add + 30 segndos (usando uma flag) ?
@@ -198,102 +339,85 @@ void check_line_3(void) {
 		}
 		BUZZER = 0;
 	}
-	delay_50us();				// Delay de 5 us.
+	if (Coluna3 == 0) {				// Descongelar feijão.
+		desc_feijao();
+		while(Coluna3 == 0) {
+			BUZZER = 1;
+			print_display();
+		}
+		BUZZER = 0;
+	}
+	delay_50us();					// Delay de 50 us.
 }
 
 
-// ------------- Função que converte os números para o sinal da porta ------------- //
-void number_to_port(char number) {
-	if (number == 9){
-		P2_0 = P2_3 = 1;
-		P2_1 = P2_2 = 0;
-	}
-	else if (number == 8) {
-		P2_0 = P2_1 = P2_2 = 0;
-		P2_3 = 1;
-	}
-	else if (number == 7) {
-		P2_0 = P2_1 = P2_2 = 1;
-		P2_3 = 0;
-	}
-	else if (number == 6) {
-		P2_0 = P2_3 = 0;
-		P2_1 = P2_2 = 1;
-	}
-	else if (number == 5) {
-		P2_0 = P2_2 = 1;
-		P2_1 = P2_3 = 0;
-	}
-	else if (number == 4) {
-		P2_0 = P2_1 = P2_3 = 0;
-		P2_2 = 1;
-	}
-	else if (number == 3) {
-		P2_0 = P2_1 = 1;
-		P2_2 = P2_3 = 0;
-	}
-	else if (number == 2) {
-		P2_0 = P2_2 = P2_3 = 0;
-		P2_1 = 1;
-	}
-	else if (number == 1) {
-		P2_0 = 1;
-		P2_1 = P2_2 = P2_3 = 0;
-	}
-	else if (number == 0) {
-		P2_0 = P2_1 = P2_2 = P2_3 = 0;
-	}
-	delay_50us();
-	delay_ms(5);
+
+// ------------- Funções especiais ------------- //
+void brigadeiro (void) { 	// Potência 5 e 7 minutos de duração
+	Power = '4';
+	Number1 = 1;
+	Number2 = 0;
+	Number3 = 7;
+	Number4 = 0;
+	NumberOfDigits = 3;
+	write_msg("Brigadeiro");
+	timer_dec();
 }
 
-// ------------- Funções que atualizam o display ------------- //
-void display_1(char number) {
-	P2_4 = P2_5 = 0;					// Seleciona o display de 7 segmentos acionado pelos pinos do MC.
-	delay_50us();						// Delay para evitar conflito de dados durante uma troca de número
-	number_to_port(number);
-	delay_50us();
+void pipoca (void) {		// Potência 7 e 3 minutos de duração
+	Power = '6';
+	Number1 = 0;
+	Number2 = 0;
+	Number3 = 3;
+	Number4 = 0;
+	NumberOfDigits = 3;
+	write_msg("Pipoca");
+	timer_dec();
 }
 
-void display_2(char number) {
-	P2_4 = 1;
-	P2_5 = 0;
-	delay_50us();
-	number_to_port(number);
-	delay_50us();
+void desc_carne (void) {	// Potência 3 e 10 minutos de duração
+	Power = '2';
+	Number1 = 0;
+	Number2 = 0;
+	Number3 = 0;
+	Number4 = 1;
+	NumberOfDigits = 3;
+	write_msg("Desc. Carne");
+	timer_dec();
+}
+void desc_feijao (void) {	// Potência 3 e 5 minutos de duração
+	Power = '2';
+	Number1 = 0;
+	Number2 = 0;
+	Number3 = 5;
+	Number4 = 0;
+	NumberOfDigits = 3;
+	write_msg("Desc. Feijao");
+	timer_dec();
 }
 
-void display_3(char number) {
-	P2_4 = 0;
-	P2_5 = 1;
-	delay_50us();
-	number_to_port(number);
-	delay_50us();
-}
 
-void display_4(char number) {
-	P2_4 = P2_5 = 1;
-	delay_50us();
-	number_to_port(number);
-	delay_50us();
-}
 
 // ------------- Interrupções / Parar/Continuar ------------- //
 void ISR_open_door(void) interrupt 0 { 	// Utiliza interrupção externa 0 (maior prioridade)
 	MOTOR = 0;
-	write_msg("PORTA ABERTA");
-	while (P3_2 == 0){
-		print_display();
+	LED = 0;							// Acende a luz.
+	write_msg("PORTA ABERTA");			// Mensagem no LCD.
+	while (P3_2 == 0){					// Segura a execução.
+		delay_ms_print(33);				// Enquanto a porta está aberta, continua impriminto o tempo mas piscando.
+		delay_ms(777);
 	}
-	clear_lcd();
-	timer_dec();
-	//IE0 = 0;
+	IE0 = 0;							// Limpa a flag de detecção de interrupção externa 0.
+	LED = 1;							// Apaga a luz.
+	clear_lcd();						// Limpa LCD.
+	timer_dec();						// Volta a contar o tempo.
+	
 }
 
 void ISR_stop_start (void) interrupt 2 {		// Utiliza interrupção externa 1
 	write_msg("Pause");
 	PauseFlag = !(PauseFlag);
-	//IE1 = 0;
+	IE1 = 0;
 	while (PauseFlag) {							// Não despausa
 		print_display();	
 	}
@@ -303,8 +427,7 @@ void ISR_stop_start (void) interrupt 2 {		// Utiliza interrupção externa 1
 }
 
 void time_out(void) {
-	int i;
-	// Quando estoura o timer: beepa o buzzer 5 vezes e volta pro início. (keypad input)
+	char i; 				// Quando estoura o timer: beepa o buzzer 5 vezes e volta pro início. (keypad input)
 	for (i = 0; i < 5; i++) {
 		BUZZER = 1;
 		write_msg("TIME OUT");
@@ -314,9 +437,13 @@ void time_out(void) {
 		delay_ms(444);
 	}
 	
-	NumberOfDigits = 0;
-	Number1 = Number2 = Number3 = Number4 = 0;
-	keyboard_input();
+	NumberOfDigits = 0;		// Restaura o contador de dígitos.
+	Number1 = 0;			// Restaura os números que contam o tempo.
+	Number2 = 0;
+	Number3 = 0;
+	Number4 = 0;
+	Power = '9';			// Restaura a potência original para o próximo uso.
+	keyboard_input();		// Volta a esperar entrada do usuário.
 }
 
 // ------------- Controle de Potência ------------- //
@@ -341,10 +468,10 @@ void set_power(void) { // potencia começa em 10 e a cada clique do botão dimin
 }
 
 // ------------- Temporizador decrescente ------------- //
-void timer_dec(void) {			// Quando chama essa função não será feito mais nada além de
-	MOTOR = 1;
+void timer_dec(void) {					// Quando chama essa função não será feito mais nada além de
+	MOTOR = 1;							// Liga o motor.
 	BUZZER = 0;
-	while (!((Number1 == 0) && (Number2 == 0) && (Number3 == 0) && (Number4 == 0))) {					//  contar o tempo e acionar o motor, ent�o n�o ser� tratado entradas do keypad durante sua execu��o
+	while (!((Number1 == 0) && (Number2 == 0) && (Number3 == 0) && (Number4 == 0))) {
 		if (Number2 != 0 && Number1 == 0) {
 			delay_ms_print(42);
 			Number2--;
