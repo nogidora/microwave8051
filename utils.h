@@ -45,7 +45,7 @@ void wr_char(void);
 void clear_lcd(void);
 
 void ISR_open_door (void);
-void ISR_start_stop (void);
+void ISR_30_sec (void);
 
 void set_power(void);
 

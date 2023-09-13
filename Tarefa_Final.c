@@ -219,10 +219,9 @@ void check_line_0(void) {			// Conjunto de funções que verificam as linhas
 	if (Coluna3 == 0) {				// Brigadeiro
 		brigadeiro();
 		while(Coluna3 == 0) {
-			BUZZER = 1;
 			print_display();
 		}
-		BUZZER = 0;
+
 	}
 	
 	delay_50us();					// Delay de 50 us.
@@ -354,6 +353,9 @@ void check_line_3(void) {
 
 // ------------- Funções especiais ------------- //
 void brigadeiro (void) { 	// Potência 5 e 7 minutos de duração
+	BUZZER = 1;
+	delay_ms(333);
+	BUZZER = 0;
 	Power = '4';
 	Number1 = 1;
 	Number2 = 0;
@@ -365,6 +367,9 @@ void brigadeiro (void) { 	// Potência 5 e 7 minutos de duração
 }
 
 void pipoca (void) {		// Potência 7 e 3 minutos de duração
+	BUZZER = 1;
+	delay_ms(333);
+	BUZZER = 0;
 	Power = '6';
 	Number1 = 0;
 	Number2 = 0;
@@ -376,6 +381,9 @@ void pipoca (void) {		// Potência 7 e 3 minutos de duração
 }
 
 void desc_carne (void) {	// Potência 3 e 10 minutos de duração
+	BUZZER = 1;
+	delay_ms(333);
+	BUZZER = 0;
 	Power = '2';
 	Number1 = 0;
 	Number2 = 0;
@@ -386,6 +394,9 @@ void desc_carne (void) {	// Potência 3 e 10 minutos de duração
 	timer_dec();
 }
 void desc_feijao (void) {	// Potência 3 e 5 minutos de duração
+	BUZZER = 1;
+	delay_ms(333);
+	BUZZER = 0;
 	Power = '2';
 	Number1 = 0;
 	Number2 = 0;
@@ -408,21 +419,28 @@ void ISR_open_door(void) interrupt 0 { 	// Utiliza interrupção externa 0 (maio
 		delay_ms(777);
 	}
 	IE0 = 0;							// Limpa a flag de detecção de interrupção externa 0.
+	P3_2 = 1;							
 	LED = 1;							// Apaga a luz.
 	clear_lcd();						// Limpa LCD.
 	timer_dec();						// Volta a contar o tempo.
 	
 }
 
-void ISR_stop_start (void) interrupt 2 {		// Utiliza interrupção externa 1
-	write_msg("Pause");
-	PauseFlag = !(PauseFlag);
-	IE1 = 0;
-	while (PauseFlag) {							// Não despausa
+void ISR_30_sec(void) interrupt 2 {		// Utiliza interrupção externa 1
+	write_msg("+ 30 s");
+	
+	if((Number2 + 3) < 6){
+		Number2 = Number2 + 3;
+	}
+	else {
+		Number3++;
+		Number2 = (Number2 + 3 - 6);
+	}
+	
+	while (P3_3) {						// Segura a execução até soltar o botão
 		print_display();	
 	}
-	write_msg("Start");
-	//clear_lcd();
+	IE1 = 0;
 	timer_dec();
 }
 
@@ -470,30 +488,29 @@ void set_power(void) { // potencia começa em 10 e a cada clique do botão dimin
 // ------------- Temporizador decrescente ------------- //
 void timer_dec(void) {					// Quando chama essa função não será feito mais nada além de
 	MOTOR = 1;							// Liga o motor.
-	BUZZER = 0;
+	BUZZER = 0;							// Garante que o buzzer estará desativado
 	while (!((Number1 == 0) && (Number2 == 0) && (Number3 == 0) && (Number4 == 0))) {
 		if (Number2 != 0 && Number1 == 0) {
-			delay_ms_print(42);
+			delay_ms_print(43);
 			Number2--;
 			Number1 = 9;
 			
 		}		
-		
-		delay_ms_print(42);
-		Number1--;
 		if (Number4 != 0 && Number3 == 0 && Number2 == 0 && Number1 == 0) { 	
-			delay_ms_print(42);			// Se ainda tem dezenas de minutos				
+			delay_ms_print(43);			// Se ainda tem dezenas de minutos				
 			Number4--;					// Mas a unidade de minutos estão em zero
 			Number3 = 9;				// E a dezena de segundos estão em zero
 			Number2 = 5;				// E a Unidade de segundos também é zero
 			Number1 = 9;
 		}
 		if (Number3 != 0 && Number2 == 0 && Number1 == 0) {
-			delay_ms_print(42);
+			delay_ms_print(43);
 			Number3--;
 			Number2 = 5;
 			Number1 = 9;
 		}
+		delay_ms_print(43);
+		Number1--;
 
 	}
 	MOTOR = 0;
