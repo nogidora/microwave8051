@@ -14,8 +14,6 @@
 #define Coluna1 P1_5
 #define Coluna2 P1_6
 
-
- 
 void display_1(char number); // Display 1 = Unidade segundos
 void display_2(char number); // Display 2 = Dezena segundos
 void display_3(char number); // Display 3 = Unidade minutos
@@ -27,14 +25,11 @@ void check_line_1(void);
 void check_line_2(void);	
 void check_line_3(void);
 
-
-
 void number_to_port (char number);
 void set_display (char Number);
 void print_display (void);
 void print_display_sec (void);
 void print_display_keypad (void);
-
 
 void config_lcd(void);
 void line_1(void);
@@ -43,7 +38,6 @@ void write_msg(char msg[]);
 void wr_cmd(void);
 void wr_char(void);
 void clear_lcd(void);
-
 
 void ISR_open_door (void);
 void start_stop (void);
@@ -84,7 +78,6 @@ void line_2(void) {
 void clear_lcd(void) {
 	LCD = 0x01;
 	wr_cmd();
-
 }
 
 void write_msg(char msg[]) {
@@ -92,18 +85,14 @@ void write_msg(char msg[]) {
 	unsigned char len;
 	
 	len = strlen(msg);
-	
 	clear_lcd();
 	line_1();
 	
-	
-	for(i = 0; i < len; i++)
-	{
+	for (i = 0; i < len; i++) {
 		LCD = msg[i];
 		wr_char();
 		delay_5us();
 	}
-	return;
 }
 
 void wr_cmd(void) {
@@ -122,25 +111,21 @@ void wr_char(void) {
 	delay_ms(5);
 }
 
-
-
 // ------------- Funções de Delay ------------- //
 void delay_5us(void) {
 	unsigned char i;
 	for(i = 0; i < 5; i++){}
 }
 
-
 void delay_50us(void) {
 	unsigned char i;
 	for(i = 0; i < 50; i++){}
 }
 
-
 void delay_ms(unsigned int ms) {		// Delay por polling via T/C 0.
 	TMOD |= 0x01;						// A operação OU preserva alguma eventual configuração prévia do T/C 1.
 	
-	while(ms){
+	while(ms) {
 		TH0 = 0xFC;						// Valor de recarga para 1 ms @ f = 11.0592 MHz (i.e. 64614).
 		TL0 = 0x66;
 		TR0 = 1;
