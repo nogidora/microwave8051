@@ -40,7 +40,7 @@ void wr_char(void);
 void clear_lcd(void);
 
 void ISR_open_door (void);
-void start_stop (void);
+void ISR_start_stop (void);
 
 void set_power(void);
 
