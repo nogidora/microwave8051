@@ -5,6 +5,8 @@
 #define LCD	P0
 #define EN	P3_7
 #define RS	P3_6
+#define MOTOR P2_7
+#define BUZZER P2_6
 
 #define Linha0 P1_0
 #define Linha1 P1_1
