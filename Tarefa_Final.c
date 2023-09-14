@@ -1,3 +1,19 @@
+// ======================================= Universidade Federal de Pelotas
+// ======================================= Centro de Desenvolvimento Tecnológico
+// ======================================= Bacharelado em Engenharia de Computação
+// ======================================= Disciplina: 22000279 --- Microcontroladores
+// ======================================= Turma: 2023/1 --- M1
+// ======================================= Professor: Alan Rossetto
+//
+//										  Descrição: Trabalho Final: Microondas controlado por 8051.
+// 								
+//
+// 										  Identificação:
+// 										  Nome da(o) aluna(o) & Matrícula: Giordano M. Rossa 17100479
+// 										  Nome da(o) aluna(o) & Matrícula: Alberto Neuenfeld Helbig 18101080
+//			
+
+
 #include <at89x52.h>
 #include <string.h>
 #include <utils.h>
@@ -6,8 +22,7 @@
 char Power = '9'; // A potência máxima usada é '9' por que "10" usaria mais que 8 bits.
 				  
 char NumberOfDigits = 0;						// Armazena a quantidade de digitos para facilitar a utilização do display 7 seg.
-char Number1, Number2, Number3, Number4 = 0;	// Números correspondente aos displays 4, 3, 2 e 1, respectivamente.
-char PauseFlag = 0;
+char Number1, Number2, Number3, Number4 = 0;	// Números correspondente aos displays 4, 3, 2 e 1, respectivamente. (Índice no proteus)
 
 void main() {
 	IE = 0x85;						// Habilita interrupções globais, interrupção externa 0, 1
@@ -15,7 +30,8 @@ void main() {
 	BUZZER = 0;						// Buzzer inicia desativado.
 	MOTOR = 0;						// Motor inicia desligado.
 	LED = 1;						// Aciona o pino do LED pois o componente será ativo em nível baixo.
-	IT1 = 1;						// Interrupção externa sensível a borda de descida.
+	IT0 = 0;						// Interrupção externa 0 sensível a nível lógico 0.
+	IT1 = 0;						// Interrupção externa 1 sensível a nível lógico 0
 	config_lcd();					// Configura display LCD.
 	write_msg("Inicializando..."); 	// Mensagem Inicial.
 	delay_ms(550);					// Delay para ler a mensagem
@@ -62,7 +78,7 @@ void print_display (void) {
 
 // ------------- Funções que atualizam o display ------------- //
 void display_1(char number) {
-	P2_4 = 0;					// Seleciona o display de 7 segmentos acionado pelos pinos do MC.
+	P2_4 = 0;					        // Seleciona o display de 7 segmentos acionado pelos pinos do MC.
 	P2_5 = 0;
 	delay_50us();						// Delay para evitar conflito de dados durante uma troca de número.
 	number_to_port(number);
@@ -94,7 +110,7 @@ void display_4(char number) {
 }
 // ------------- Função que converte os números para o sinal da porta ------------- //
 void number_to_port(char number) {
-	if (number == 9) {			// Verifica o número de entrada
+	if (number == 9) {			// Verifica o número de entrada.
 		P2_0 = 1;				// Aciona os respectivos pinos da porta P2.
 		P2_1 = 0;
 		P2_2 = 0;
@@ -165,7 +181,7 @@ void number_to_port(char number) {
 		P2_3 = 0;
 		delay_50us();
 	}
-	delay_ms(5);
+	delay_ms(5);                    // Com delays menores ocorre falhas na disposição do display.
 }
 
 
@@ -193,10 +209,10 @@ void check_line_0(void) {			// Conjunto de funções que verificam as linhas
 
 	if (Coluna0 == 0) {				// Tecla 1.
 		set_display(1);					
-		while(Coluna0 == 0) {
+		while(Coluna0 == 0) {       // Debouncing do botão. Garante que não será acionado mais de uma vez antes de ser solto.
 			BUZZER = 1;
 			print_display();
-		}		// Debouncing do botão. Garante que não será acionado mais de uma vez antes de ser solto.
+		}		
 		BUZZER = 0;
 	}
 	if (Coluna1 == 0) {				// Tecla 2.
@@ -316,7 +332,7 @@ void check_line_3(void) {
 	Linha3 = 0;						// Ativa a linha 3
 	if (Coluna0 == 0) {				// Tecla * corresponde ao acionamento do forno. 
 		BUZZER = 1;
-		timer_dec(); 				// Aqui pode ser o start_stop / add + 30 segndos (usando uma flag) ?
+		timer_dec(); 				
 		while(Coluna0 == 0) {
 			print_display();
 		}
@@ -416,10 +432,10 @@ void ISR_open_door(void) interrupt 0 { 	// Utiliza interrupção externa 0 (maio
 	write_msg("PORTA ABERTA");			// Mensagem no LCD.
 	while (P3_2 == 0){					// Segura a execução.
 		delay_ms_print(33);				// Enquanto a porta está aberta, continua impriminto o tempo mas piscando.
-		delay_ms(777);
+		delay_ms(777);                  // Delay para que o display pisque.
 	}
 	IE0 = 0;							// Limpa a flag de detecção de interrupção externa 0.
-	P3_2 = 1;							
+	P3_2 = 1;							// Para manter o nível alto no pino de interrupção.
 	LED = 1;							// Apaga a luz.
 	clear_lcd();						// Limpa LCD.
 	timer_dec();						// Volta a contar o tempo.
@@ -465,11 +481,11 @@ void time_out(void) {
 }
 
 // ------------- Controle de Potência ------------- //
-void set_power(void) { // potencia começa em 10 e a cada clique do botão diminui em 1 unidade. potencia maxima = 10
+void set_power(void) {               // Potncia começa em 10 (9 mas o microondas não opera em potência 0) e a cada clique do botão diminui em 1 unidade.
 	if (Power == '0') {
 		Power = '9';
 		delay_50us();
-		write_msg("Potencia: ");
+		write_msg("Potencia: ");    // Para mostrar potência máxima é escrito um char de cada vez.
 		LCD = '1';
 		wr_char();
 		LCD = '0';
@@ -478,40 +494,40 @@ void set_power(void) { // potencia começa em 10 e a cada clique do botão dimin
 	}
 	Power--;
 	delay_ms(1);
-	write_msg("Potencia: ");
+	write_msg("Potencia: ");        // Para as demais potências basta utilizar a função write_msg combinada com uma escrita no LCD.
 	delay_50us();
-	LCD = (Power + 1);
+	LCD = (Power + 1);              // Power + 1 evita o número 0.
 	wr_char();
 	delay_50us();
 }
 
 // ------------- Temporizador decrescente ------------- //
-void timer_dec(void) {					// Quando chama essa função não será feito mais nada além de
+void timer_dec(void) {
 	MOTOR = 1;							// Liga o motor.
-	BUZZER = 0;							// Garante que o buzzer estará desativado
+	BUZZER = 0;							// Garante que o buzzer estará desativado.
+	LED = 0;							// Acende a luz interna quando está.
 	while (!((Number1 == 0) && (Number2 == 0) && (Number3 == 0) && (Number4 == 0))) {
-		if (Number2 != 0 && Number1 == 0) {
+		if (Number2 != 0 && Number1 == 0) {									// Momento para decrementar Number2 (Dezenas de segundos)
 			delay_ms_print(43);
 			Number2--;
 			Number1 = 9;
 			
 		}		
-		if (Number4 != 0 && Number3 == 0 && Number2 == 0 && Number1 == 0) { 	
-			delay_ms_print(43);			// Se ainda tem dezenas de minutos				
-			Number4--;					// Mas a unidade de minutos estão em zero
-			Number3 = 9;				// E a dezena de segundos estão em zero
-			Number2 = 5;				// E a Unidade de segundos também é zero
+		if (Number4 != 0 && Number3 == 0 && Number2 == 0 && Number1 == 0) { // Momento para decrementar Number4 (Dezenas de minutos)
+			delay_ms_print(43);						
+			Number4--;					
+			Number3 = 9;				
+			Number2 = 5;			
 			Number1 = 9;
 		}
-		if (Number3 != 0 && Number2 == 0 && Number1 == 0) {
+		if (Number3 != 0 && Number2 == 0 && Number1 == 0) {					// Momento para decrementar Number3 (Unidades de minutos)
 			delay_ms_print(43);
 			Number3--;
 			Number2 = 5;
 			Number1 = 9;
 		}
-		delay_ms_print(43);
+		delay_ms_print(43);													 // Momento para decrementar Number1 (Unidades de segundos)
 		Number1--;
-
 	}
 	MOTOR = 0;
 	write_msg("Finalizado");
