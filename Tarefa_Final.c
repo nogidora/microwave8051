@@ -23,6 +23,7 @@ char Power = '9'; // A potência máxima usada é '9' por que "10" usaria mais q
 				  
 char NumberOfDigits = 0;						// Armazena a quantidade de digitos para facilitar a utilização do display 7 seg.
 char Number1, Number2, Number3, Number4 = 0;	// Números correspondente aos displays 4, 3, 2 e 1, respectivamente. (Índice no proteus)
+char FlagDoor = 0;								// Porta fechada inicialmente
 
 void main() {
 	IE = 0x85;						// Habilita interrupções globais, interrupção externa 0, 1
@@ -30,7 +31,7 @@ void main() {
 	BUZZER = 0;						// Buzzer inicia desativado.
 	MOTOR = 0;						// Motor inicia desligado.
 	LED = 1;						// Aciona o pino do LED pois o componente será ativo em nível baixo.
-	IT0 = 0;						// Interrupção externa 0 sensível a nível lógico 0.
+	IT0 = 1;						// Interrupção externa 0 sensível a nível lógico 0.
 	IT1 = 0;						// Interrupção externa 1 sensível a nível lógico 0
 	config_lcd();					// Configura display LCD.
 	write_msg("Inicializando..."); 	// Mensagem Inicial.
@@ -241,6 +242,7 @@ void check_line_0(void) {			// Conjunto de funções que verificam as linhas
 	}
 	
 	delay_50us();					// Delay de 50 us.
+	return;
 }
 
 void check_line_1(void) {
@@ -282,6 +284,7 @@ void check_line_1(void) {
 		BUZZER = 0;
 	}
 	delay_50us();					// Delay de 5 us.
+	return;
 }
 
 void check_line_2(void) {
@@ -323,6 +326,7 @@ void check_line_2(void) {
 		BUZZER = 0;
 	}
 	delay_50us();					// Delay de 5 us.
+	return;
 }
 
 void check_line_3(void) {
@@ -363,6 +367,7 @@ void check_line_3(void) {
 		BUZZER = 0;
 	}
 	delay_50us();					// Delay de 50 us.
+	return;
 }
 
 
@@ -380,6 +385,7 @@ void brigadeiro (void) { 	// Potência 5 e 7 minutos de duração
 	NumberOfDigits = 3;
 	write_msg("Brigadeiro");
 	timer_dec();
+	return;
 }
 
 void pipoca (void) {		// Potência 7 e 3 minutos de duração
@@ -394,6 +400,7 @@ void pipoca (void) {		// Potência 7 e 3 minutos de duração
 	NumberOfDigits = 3;
 	write_msg("Pipoca");
 	timer_dec();
+	return;
 }
 
 void desc_carne (void) {	// Potência 3 e 10 minutos de duração
@@ -408,7 +415,9 @@ void desc_carne (void) {	// Potência 3 e 10 minutos de duração
 	NumberOfDigits = 3;
 	write_msg("Desc. Carne");
 	timer_dec();
+	return;
 }
+
 void desc_feijao (void) {	// Potência 3 e 5 minutos de duração
 	BUZZER = 1;
 	delay_ms(333);
@@ -421,25 +430,24 @@ void desc_feijao (void) {	// Potência 3 e 5 minutos de duração
 	NumberOfDigits = 3;
 	write_msg("Desc. Feijao");
 	timer_dec();
+	return;
 }
-
-
 
 // ------------- Interrupções / Parar/Continuar ------------- //
 void ISR_open_door(void) interrupt 0 { 	// Utiliza interrupção externa 0 (maior prioridade)
-	MOTOR = 0;
-	LED = 0;							// Acende a luz.
-	write_msg("PORTA ABERTA");			// Mensagem no LCD.
-	while (P3_2 == 0){					// Segura a execução.
-		delay_ms_print(33);				// Enquanto a porta está aberta, continua impriminto o tempo mas piscando.
-		delay_ms(777);                  // Delay para que o display pisque.
+	FlagDoor = 1;
+	//while (P3_2 == 0); 
+	if (FlagDoor == 1) {				// Caso porta aberta
+		MOTOR = 0;						// Desliga o motor.
+		LED = 0;						// Acende a luz.
+		write_msg("PORTA ABERTA");		// Mensagem no LCD.	
 	}
-	IE0 = 0;							// Limpa a flag de detecção de interrupção externa 0.
-	P3_2 = 1;							// Para manter o nível alto no pino de interrupção.
-	LED = 1;							// Apaga a luz.
-	clear_lcd();						// Limpa LCD.
-	timer_dec();						// Volta a contar o tempo.
-	
+	else if (FlagDoor == 0){			// Caso porta fechada
+		MOTOR = 1;						// Liga o motor.
+		LED = 0;						// Acende a luz.
+		clear_lcd();					// Limpa LCD.
+	}
+	return;
 }
 
 void ISR_30_sec(void) interrupt 2 {		// Utiliza interrupção externa 1
@@ -456,12 +464,13 @@ void ISR_30_sec(void) interrupt 2 {		// Utiliza interrupção externa 1
 	while (P3_3) {						// Segura a execução até soltar o botão
 		print_display();	
 	}
-	IE1 = 0;
-	timer_dec();
+ 
+	return;
 }
 
 void time_out(void) {
 	char i; 				// Quando estoura o timer: beepa o buzzer 5 vezes e volta pro início. (keypad input)
+	MOTOR = 0;
 	for (i = 0; i < 5; i++) {
 		BUZZER = 1;
 		write_msg("TIME OUT");
@@ -477,11 +486,12 @@ void time_out(void) {
 	Number3 = 0;
 	Number4 = 0;
 	Power = '9';			// Restaura a potência original para o próximo uso.
-	keyboard_input();		// Volta a esperar entrada do usuário.
+	write_msg("Insira o tempo"); // Assim a string aparecerá novamente, pois após os returns volta para o loop do teclado. 
+	return;
 }
 
 // ------------- Controle de Potência ------------- //
-void set_power(void) {               // Potncia começa em 10 (9 mas o microondas não opera em potência 0) e a cada clique do botão diminui em 1 unidade.
+void set_power(void) {               // Potência começa em 10 (9 mas o microondas não opera em potência 0) e a cada clique do botão diminui em 1 unidade.
 	if (Power == '0') {
 		Power = '9';
 		delay_50us();
@@ -499,39 +509,45 @@ void set_power(void) {               // Potncia começa em 10 (9 mas o microonda
 	LCD = (Power + 1);              // Power + 1 evita o número 0.
 	wr_char();
 	delay_50us();
+	return;
 }
 
 // ------------- Temporizador decrescente ------------- //
 void timer_dec(void) {
 	MOTOR = 1;							// Liga o motor.
 	BUZZER = 0;							// Garante que o buzzer estará desativado.
-	LED = 0;							// Acende a luz interna quando está.
+	LED = 0;							// Acende a luz interna quando está ligado.
+	
 	while (!((Number1 == 0) && (Number2 == 0) && (Number3 == 0) && (Number4 == 0))) {
-		if (Number2 != 0 && Number1 == 0) {									// Momento para decrementar Number2 (Dezenas de segundos)
-			delay_ms_print(43);
-			Number2--;
-			Number1 = 9;
-			
-		}		
-		if (Number4 != 0 && Number3 == 0 && Number2 == 0 && Number1 == 0) { // Momento para decrementar Number4 (Dezenas de minutos)
-			delay_ms_print(43);						
-			Number4--;					
-			Number3 = 9;				
-			Number2 = 5;			
-			Number1 = 9;
+		if(FlagDoor == 0) {
+			if (Number2 != 0 && Number1 == 0) {									// Momento para decrementar Number2 (Dezenas de segundos)
+				delay_ms_print(43);
+				Number2--;
+				Number1 = 9;
+			}		
+			if (Number4 != 0 && Number3 == 0 && Number2 == 0 && Number1 == 0) { // Momento para decrementar Number4 (Dezenas de minutos)
+				delay_ms_print(43);						
+				Number4--;					
+				Number3 = 9;				
+				Number2 = 5;			
+				Number1 = 9;
+			}
+			if (Number3 != 0 && Number2 == 0 && Number1 == 0) {					// Momento para decrementar Number3 (Unidades de minutos)
+				delay_ms_print(43);
+				Number3--;
+				Number2 = 5;
+				Number1 = 9;
+			}
+			delay_ms_print(43);													 // Momento para decrementar Number1 (Unidades de segundos)
+			Number1--;
 		}
-		if (Number3 != 0 && Number2 == 0 && Number1 == 0) {					// Momento para decrementar Number3 (Unidades de minutos)
-			delay_ms_print(43);
-			Number3--;
-			Number2 = 5;
-			Number1 = 9;
+		else if (FlagDoor == 1) { 
+			delay_ms_print(33);				// Enquanto a porta está aberta, continua impriminto o tempo mas piscando.
+			delay_ms(77);                  // Delay para que o display pisque.
 		}
-		delay_ms_print(43);													 // Momento para decrementar Number1 (Unidades de segundos)
-		Number1--;
 	}
-	MOTOR = 0;
-	write_msg("Finalizado");
 	time_out();
+	return;
 }
 
 void delay_ms_print(unsigned int ms) {	// Realiza um delay enquanto printa o Display 7 SEG
@@ -540,4 +556,5 @@ void delay_ms_print(unsigned int ms) {	// Realiza um delay enquanto printa o Dis
 		print_display();
 		delay_ms(1);
 	}
+	return;
 }
