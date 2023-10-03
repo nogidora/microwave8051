@@ -101,8 +101,9 @@ void write_msg(char msg[]) {
 	for (i = 0; i < len; i++) {
 		LCD = msg[i];
 		wr_char();
-		delay_5us();
+		delay_ms(10);
 	}
+	return;
 }
 
 void wr_cmd(void) {
